@@ -53,8 +53,9 @@ export async function POST(request: NextRequest) {
     }
 
     const sources: SourceDoc[] = notebook.sources;
-    const numItems = body.numberOfItems ? parseInt(body.numberOfItems, 10) : 10;
+    const numItems = Math.min(Math.max(parseInt(body.numberOfItems ?? "", 10) || 10, 1), 50);
     const assessmentSections = officialAssessmentTemplateSections(numItems);
+    const learnerContext = notebook.details?.learnerContext?.trim() || undefined;
 
     const now = new Date().toISOString();
 
@@ -63,9 +64,10 @@ export async function POST(request: NextRequest) {
       sections: assessmentSections,
       instructions,
       standards,
+      learnerContext,
       topic,
       assessmentType: body.assessmentType,
-      numberOfItems: body.numberOfItems,
+      numberOfItems: String(numItems),
       itemTypes: body.itemTypes,
       difficultyLevel: body.difficultyLevel,
       timeLimit: body.timeLimit,
@@ -90,6 +92,7 @@ export async function POST(request: NextRequest) {
     };
 
     notebook.assessmentResult = assessmentResult;
+    notebook.assessment = { ...assessmentResult.details, specialInstructions: instructions };
     await saveNotebook(notebook);
     incrementAssessmentCount(); // fire-and-forget, best-effort
 

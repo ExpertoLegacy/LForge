@@ -16,7 +16,13 @@ export async function PATCH(request: NextRequest, ctx: Ctx) {
     if (!notebook) {
       return NextResponse.json({ error: "Notebook not found." }, { status: 404 });
     }
-    const section = notebook.result?.sections.find((s) => s.sectionId === sectionId);
+    const body = (await request.json().catch(() => null)) as {
+      content?: unknown;
+      sessionIndex?: unknown;
+    } | null;
+    const sessionPlan =
+      typeof body?.sessionIndex === "number" ? notebook.result?.sessionPlans?.[body.sessionIndex] : undefined;
+    const section = (sessionPlan?.sections ?? notebook.result?.sections)?.find((s) => s.sectionId === sectionId);
     if (!section) {
       return NextResponse.json({ error: "Section not found." }, { status: 404 });
     }
@@ -27,9 +33,6 @@ export async function PATCH(request: NextRequest, ctx: Ctx) {
       );
     }
 
-    const body = (await request.json().catch(() => null)) as {
-      content?: unknown;
-    } | null;
     const content = typeof body?.content === "string" ? body.content : "";
     if (content.length > MAX_CONTENT_CHARS) {
       return NextResponse.json(

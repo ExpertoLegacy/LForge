@@ -21,7 +21,7 @@ const FORGE_MESSAGES = [
   "Delivering a Classroom-Ready Output...",
 ];
 
-function ForgeOverlay({ multiSession }: { multiSession: boolean }) {
+function ForgeOverlay({ multiSession, label }: { multiSession: boolean; label: string }) {
   const [msgIndex, setMsgIndex] = useState(0);
   const [visible, setVisible] = useState(true);
 
@@ -38,11 +38,11 @@ function ForgeOverlay({ multiSession }: { multiSession: boolean }) {
   }, []);
 
   return (
-    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/75 backdrop-blur-sm">
+    <div role="status" className="fixed inset-0 z-30 flex items-center justify-center bg-black/75 px-4 backdrop-blur-sm">
       <div className="lf-panel lf-frame relative flex flex-col items-center gap-4 px-10 py-8 text-center">
         <Spinner className="h-8 w-8 text-[var(--lf-accent)]" />
-        <p className="font-mono text-sm font-bold uppercase tracking-widest text-emerald-100">
-          Forging your lesson plan…
+        <p className="font-mono text-sm font-bold uppercase tracking-widest text-[var(--lf-fg)]">
+          {label}
         </p>
         <p
           className="min-h-[1.5rem] font-mono text-xs uppercase tracking-wider transition-opacity duration-400"
@@ -55,7 +55,7 @@ function ForgeOverlay({ multiSession }: { multiSession: boolean }) {
           {FORGE_MESSAGES[msgIndex]}
         </p>
         {multiSession && (
-          <p className="max-w-xs font-mono text-[10px] leading-relaxed text-zinc-600">
+          <p className="max-w-xs font-mono text-[11px] leading-relaxed text-zinc-600">
             Generating sessions sequentially with continuity. This may take a few minutes.
           </p>
         )}
@@ -84,7 +84,7 @@ function Spinner({ className = "" }: { className?: string }) {
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: `color-mix(in srgb, var(--lf-accent), transparent 40%)` }}>
+    <h2 className="text-sm font-semibold text-[var(--lf-fg)]">
       {children}
     </h2>
   );
@@ -143,7 +143,7 @@ function ContentBody({ content }: { content: string }) {
     );
   }
   flush();
-  return <div className="space-y-2">{out}</div>;
+  return <div className="max-w-[68ch] space-y-2">{out}</div>;
 }
 
 function DetailInput({
@@ -165,7 +165,7 @@ function DetailInput({
 }) {
   return (
     <label className="block">
-      <span className="lf-label mb-0.5 block">{label}</span>
+      <span className="lf-label mb-1 block">{label}</span>
       {multiline ? (
         <textarea
           value={value}
@@ -201,7 +201,7 @@ function DetailSummary({
   const text = value?.trim();
   return (
     <div>
-      <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-zinc-500">
+      <span className="lf-label">
         {label}
       </span>
       <p
@@ -239,18 +239,21 @@ function ModelSelector({
 
   return (
     <div className="relative">
+      {open && <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
         className="flex w-full items-center justify-between gap-2 rounded-none border px-2.5 py-1.5 text-left transition disabled:opacity-50"
         style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 80%)", backgroundColor: "color-mix(in srgb, var(--lf-accent), transparent 97%)" }}
       >
         <div className="min-w-0">
-          <p className="truncate font-mono text-xs font-medium text-emerald-100">
+          <p className="truncate font-mono text-xs font-medium text-[var(--lf-fg)]">
             {current.name}
           </p>
-          <p className="font-mono text-[10px] text-zinc-500">
+          <p className="font-mono text-[11px] text-zinc-500">
             {getProviderLabel(current.provider)}
             {current.free && (
               <span className="ml-1.5 border px-1 py-px" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 70%)", backgroundColor: "color-mix(in srgb, var(--lf-accent), transparent 92%)", color: "color-mix(in srgb, var(--lf-accent), transparent 30%)" }}>
@@ -273,7 +276,7 @@ function ModelSelector({
           {PROVIDER_GROUPS.map(([provider, models]) => (
             <div key={provider}>
               <div className="border-b px-2.5 py-1" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 90%)", backgroundColor: "color-mix(in srgb, var(--lf-accent), transparent 95%)" }}>
-                <span className="font-mono text-[10px] uppercase tracking-wider" style={{ color: "color-mix(in srgb, var(--lf-accent), transparent 40%)" }}>
+                <span className="font-mono text-[11px] uppercase tracking-wider" style={{ color: "color-mix(in srgb, var(--lf-accent), transparent 40%)" }}>
                   {getProviderLabel(provider as AIModel["provider"])}
                 </span>
               </div>
@@ -285,19 +288,19 @@ function ModelSelector({
                     onChange(m.id);
                     setOpen(false);
                   }}
-                  className={`flex w-full items-start justify-between gap-2 px-2.5 py-2 text-left transition ${
-                    m.id === value ? "bg-[var(--lf-accent)]/10" : ""
+                  aria-current={m.id === value}
+                  className={`flex w-full items-start justify-between gap-2 px-2.5 py-2 text-left transition hover:bg-[var(--lf-accent)]/10 ${
+                    m.id === value ? "bg-[var(--lf-accent)]/15" : ""
                   }`}
-                  style={{ "--tw-bg-opacity": 0.1 } as React.CSSProperties}
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-mono text-xs text-emerald-100">{m.name}</p>
+                    <p className="truncate font-mono text-xs text-[var(--lf-fg)]">{m.name}</p>
                     {m.note && (
-                      <p className="font-mono text-[10px] text-zinc-500">{m.note}</p>
+                      <p className="font-mono text-[11px] text-zinc-500">{m.note}</p>
                     )}
                   </div>
                   {m.free && (
-                    <span className="mt-0.5 shrink-0 border px-1 py-px font-mono text-[10px]" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 70%)", backgroundColor: "color-mix(in srgb, var(--lf-accent), transparent 92%)", color: "color-mix(in srgb, var(--lf-accent), transparent 30%)" }}>
+                    <span className="mt-0.5 shrink-0 border px-1 py-px font-mono text-[11px]" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 70%)", backgroundColor: "color-mix(in srgb, var(--lf-accent), transparent 92%)", color: "color-mix(in srgb, var(--lf-accent), transparent 30%)" }}>
                       free
                     </span>
                   )}
@@ -370,7 +373,6 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
     return base;
   });
   const [assessmentBusy, setAssessmentBusy] = useState(false);
-  const [assessmentInstructions, setAssessmentInstructions] = useState("");
   const [assessmentCompetency, setAssessmentCompetency] = useState(nb.assessment?.competency ?? details.competency ?? "");
   const [assessmentTopic, setAssessmentTopic] = useState(nb.assessment?.topic ?? details.contentStandard ?? "");
   const [assessmentSectionBusy, setAssessmentSectionBusy] = useState<string | null>(null);
@@ -577,10 +579,12 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
   /* ---------------- generation ---------------- */
 
   async function generateAll() {
-    if (
-      activeApprovedCount > 0 &&
-      !confirm("Regenerating will replace the plan and clear all approvals. Continue?")
-    ) {
+    const allPlanSections = [
+      ...(nb.result?.sections ?? []),
+      ...(nb.result?.sessionPlans?.flatMap((sp) => sp.sections) ?? []),
+    ];
+    const hasApprovals = allPlanSections.some((s) => s.approvedAt && s.sectionId !== COMPETENCY_SECTION_ID);
+    if (hasApprovals && !confirm("Regenerating will replace the plan and clear all approvals. Continue?")) {
       return;
     }
     setBusy("generate");
@@ -625,6 +629,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
           instructions,
           feedback: useFeedback ? feedbackText : undefined,
           modelId: selectedModel,
+          sessionIndex: isMultiSession ? activeSessionTab : undefined,
         }),
       });
       setNb(data.notebook);
@@ -688,7 +693,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: editText }),
+          body: JSON.stringify({ content: editText, sessionIndex: isMultiSession ? activeSessionTab : undefined }),
         }
       );
       setNb(data.notebook);
@@ -719,7 +724,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           notebookId: nb.id,
-          instructions: assessmentInstructions,
+          instructions: assessmentDetails.specialInstructions,
           modelId: selectedModel,
           competency: assessmentCompetency,
           topic: assessmentTopic,
@@ -747,7 +752,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
         body: JSON.stringify({
           notebookId: nb.id,
           sectionId,
-          instructions: assessmentInstructions,
+          instructions: assessmentDetails.specialInstructions,
           feedback: useFeedback ? assessmentFeedbackText : undefined,
           competency: assessmentCompetency,
           topic: assessmentTopic,
@@ -848,7 +853,8 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${title.replace(/[^\w\d- ]+/g, "").trim().replace(/\s+/g, "-") || "lesson-plan"}.docx`;
+      const extension = blob.type.includes("zip") ? "zip" : "docx";
+      a.download = `${title.replace(/[^\w\d- ]+/g, "").trim().replace(/\s+/g, "-") || "lesson-plan"}.${extension}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -1028,7 +1034,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
           {/* Attached Files */}
           {nb.sources.filter((s) => s.kind !== "web").length > 0 && (
             <div>
-              <p className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-500">Attached Files</p>
+              <p className="mb-1.5 font-mono text-[11px] uppercase tracking-wider text-zinc-500">Attached Files</p>
               <ul className="space-y-1.5">
                 {nb.sources.filter((s) => s.kind !== "web").map((s) => (
                   <li
@@ -1050,7 +1056,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                         ✕
                       </SmolderButton>
                     </div>
-                    <span className="self-start border px-1.5 py-0.5 font-mono text-[10px] uppercase" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 80%)", backgroundColor: "color-mix(in srgb, var(--lf-accent), transparent 95%)", color: "var(--lf-accent)" }}>
+                    <span className="self-start border px-1.5 py-0.5 font-mono text-[11px] uppercase" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 80%)", backgroundColor: "color-mix(in srgb, var(--lf-accent), transparent 95%)", color: "var(--lf-accent)" }}>
                       {s.kind}
                     </span>
                   </li>
@@ -1062,7 +1068,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
           {/* Web Links */}
           {nb.sources.filter((s) => s.kind === "web").length > 0 && (
             <div>
-              <p className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-zinc-500">Web Links</p>
+              <p className="mb-1.5 font-mono text-[11px] uppercase tracking-wider text-zinc-500">Web Links</p>
               <ul className="space-y-1.5">
                  {nb.sources.filter((s) => s.kind === "web").map((s) => (
                   <li
@@ -1109,9 +1115,9 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
   );
 
   return (
-    <div className="flex min-h-0 w-full flex-1">
+    <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
       {/* Sidebar */}
-      <aside className="flex w-80 shrink-0 flex-col gap-6 overflow-y-auto border-r p-4" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 85%)", backgroundColor: "rgba(0,0,0,0.4)" }}>
+      <aside className="flex w-full shrink-0 flex-col gap-6 border-b p-4 lg:w-80 lg:overflow-y-auto lg:border-b-0 lg:border-r" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 85%)", backgroundColor: "rgba(0,0,0,0.4)" }}>
         {/* AI Model */}
         <section>
           <div className="mb-2">
@@ -1122,8 +1128,8 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
             onChange={setSelectedModel}
             disabled={generating}
           />
-          <p className="mt-1.5 font-mono text-[10px] leading-relaxed text-zinc-600">
-            All listed models are free. Set the matching API key in .env.local to use providers other than Gemini.
+          <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+            All listed models are free. If one is busy, choose another.
           </p>
         </section>
 
@@ -1166,7 +1172,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                     <Spinner className="h-3 w-3" /> Forging…
                   </span>
                 ) : (
-                  "YOU STRIKE, I'LL FORGE IT !!!"
+                  "Forge again"
                 )}
               </SmolderButton>
             </div>
@@ -1178,13 +1184,13 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
           <section>
             <div className="mb-2 flex items-center justify-between">
               <SectionHeading>Assessment Configuration</SectionHeading>
-              <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--lf-accent)]">Saved!</span>
+              <span className="font-mono text-[11px] uppercase tracking-wider text-[var(--lf-accent)]">Saved!</span>
             </div>
             <div className="lf-panel space-y-3 p-3">
               {/* Learning Competency */}
               <div>
                 <label className="block">
-                  <span className="mb-0.5 block font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]">
+                  <span className="lf-label lf-label-key mb-1 block">
                     Learning Competency
                   </span>
                   <textarea
@@ -1201,7 +1207,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
               {/* Content / Topic */}
               <div>
                 <label className="block">
-                  <span className="mb-0.5 block font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]">
+                  <span className="lf-label lf-label-key mb-1 block">
                     Content / Topic
                   </span>
                   <textarea
@@ -1218,7 +1224,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
               {/* Number of Items */}
               <div>
                 <label className="block">
-                  <span className="mb-0.5 block font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]">
+                  <span className="lf-label lf-label-key mb-1 block">
                     Number of Items
                   </span>
                   <input
@@ -1235,7 +1241,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
 
               {/* Item Types */}
               <div>
-                <span className="mb-0.5 block font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]">
+                <span className="lf-label lf-label-key mb-1 block">
                   Item Types
                 </span>
                 <div className="flex flex-wrap gap-1.5 mt-1">
@@ -1254,7 +1260,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                         }}
                         className="accent-[var(--lf-accent)]"
                       />
-                      <span className="font-mono text-[10px] text-zinc-300">{type}</span>
+                      <span className="font-mono text-[11px] text-zinc-300">{type}</span>
                     </label>
                   ))}
                 </div>
@@ -1263,7 +1269,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
               {/* Difficulty Level */}
               <div>
                 <label className="block">
-                  <span className="mb-0.5 block font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]">
+                  <span className="lf-label lf-label-key mb-1 block">
                     Difficulty Level
                   </span>
                   <select
@@ -1307,14 +1313,16 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
       </aside>
 
       {/* Main */}
-      <main className="relative min-w-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-3xl px-8 py-8">
+      <main className="relative min-w-0 flex-1 lg:overflow-y-auto">
+        <div className="mx-auto max-w-3xl px-4 py-6 sm:px-8 sm:py-8">
           {/* Plan / Assessment tabs */}
-          <div className="mb-6 flex gap-1 border-b" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 85%)" }}>
+          <div role="tablist" className="mb-6 flex gap-1 border-b" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 85%)" }}>
             {(["plan", "assessment"] as const).map((v) => (
               <button
                 key={v}
                 type="button"
+                role="tab"
+                aria-selected={activeView === v}
                 onClick={() => setActiveView(v)}
                 className={`px-5 py-2 font-mono text-[11px] uppercase tracking-wider transition-colors ${
                   activeView === v
@@ -1327,9 +1335,26 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
             ))}
           </div>
 
+          {/* Errors */}
+          {error && (
+            <div role="alert" className="mb-6 rounded-none border border-red-500/40 bg-red-500/5 p-3">
+              <p className="text-sm font-semibold text-red-400">
+                Something went wrong
+              </p>
+              <p className="mt-1 text-[13px] leading-snug text-red-300">{error}</p>
+              <SmolderButton
+                variant="muted"
+                onClick={() => setError(null)}
+                className="mt-1.5 rounded-none px-2 py-1 font-mono text-xs uppercase tracking-wider text-red-400 underline"
+              >
+                Dismiss
+              </SmolderButton>
+            </div>
+          )}
+
           {activeView === "plan" ? (
             <>
-          <div className="mb-6 flex items-start justify-between gap-4">
+          <div className="mb-6 flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-start">
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -1360,6 +1385,11 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                     : `${activeApprovedCount} of ${activeTotal} ready`}
                 </span>
               )}
+              {nb.result && allSessionsApproved && (
+                <span className="max-w-48 text-right text-xs text-zinc-400">
+                  Downloads your file, then clears this plan from LessonForge.
+                </span>
+              )}
             </div>
           </div>
 
@@ -1381,7 +1411,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                       </SmolderButton>
                     )}
                     <label className="flex cursor-pointer items-center gap-2 select-none">
-                      <span className={`font-mono text-[10px] uppercase tracking-wider transition-colors ${formMode === "easy" ? "text-[var(--lf-accent)]" : "text-zinc-500"}`}>Easy</span>
+                      <span className={`font-mono text-[11px] uppercase tracking-wider transition-colors ${formMode === "easy" ? "text-[var(--lf-accent)]" : "text-zinc-500"}`}>Easy</span>
                       <button
                         type="button"
                         role="switch"
@@ -1402,7 +1432,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                           style={{ transform: formMode === "pro" ? "translateX(17px)" : "translateX(2px)" }}
                         />
                       </button>
-                      <span className={`font-mono text-[10px] uppercase tracking-wider transition-colors ${formMode === "pro" ? "text-[var(--lf-accent)]" : "text-zinc-500"}`}>Pro</span>
+                      <span className={`font-mono text-[11px] uppercase tracking-wider transition-colors ${formMode === "pro" ? "text-[var(--lf-accent)]" : "text-zinc-500"}`}>Pro</span>
                     </label>
                   </div>
                 </div>
@@ -1488,15 +1518,29 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                       onClick={saveIdentity}
                       className="rounded-none px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider"
                     >
-                      Save Lesson Details
+                      Save teacher details
                     </SmolderButton>
                   </div>
                   </>
                   )}
+                  {identitySaved && (
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="min-w-0 truncate text-xs text-zinc-400">
+                        Teacher details saved{details.teachers ? ` for ${details.teachers}` : ""}.
+                      </p>
+                      <SmolderButton
+                        variant="ghost"
+                        onClick={() => setIdentitySaved(false)}
+                        className="rounded-none px-2 py-1 font-mono text-[11px] uppercase tracking-wider"
+                      >
+                        Edit
+                      </SmolderButton>
+                    </div>
+                  )}
                   {/* Competency - required */}
                   <div>
                     <label className="block">
-                      <span className="mb-0.5 block font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]">
+                      <span className="lf-label lf-label-key mb-1 block">
                         Learning Competency &amp; Curriculum Standards{" "}
                         <span aria-hidden="true">*</span>
                       </span>
@@ -1515,7 +1559,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                   </div>
                   <div>
                     <label className="block">
-                      <span className="mb-0.5 block font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]">
+                      <span className="lf-label lf-label-key mb-1 block">
                         Content / Topic <span aria-hidden="true">*</span>
                       </span>
                       <textarea
@@ -1533,7 +1577,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                   </div>
                   <div>
                     <label className="block">
-                      <span className="lf-label mb-0.5 block">Learner Context</span>
+                      <span className="lf-label mb-1 block">Learner Context</span>
                       <textarea
                         value={details.learnerContext ?? ""}
                         onChange={(e) => {
@@ -1571,34 +1615,18 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
             <div className="mb-6">
               <SmolderButton
                 variant="forge"
+                ambient
                 onClick={generateAll}
                 disabled={!canGenerate}
-                className="w-full rounded-none px-6 py-4 font-mono text-base font-bold uppercase tracking-widest disabled:cursor-not-allowed disabled:shadow-none disabled:opacity-30"
+                className="w-full rounded-none px-6 py-4 font-mono text-base font-bold uppercase tracking-widest disabled:cursor-not-allowed disabled:shadow-none disabled:opacity-40"
               >
                 {busy === "generate" ? (
                   <span className="flex items-center justify-center gap-2">
                     <Spinner className="h-4 w-4" /> Forging…
                   </span>
                 ) : (
-                  "YOU STRIKE, I'LL FORGE IT !!!"
+                  "You strike, I'll forge it"
                 )}
-              </SmolderButton>
-            </div>
-          )}
-
-          {/* Errors */}
-          {error && (
-            <div className="mb-6 rounded-none border border-red-500/40 bg-red-500/5 p-3">
-              <p className="font-mono text-[11px] uppercase tracking-wider text-red-400">
-                Error
-              </p>
-              <p className="mt-1 text-[13px] leading-snug text-red-300">{error}</p>
-              <SmolderButton
-                variant="muted"
-                onClick={() => setError(null)}
-                className="mt-1.5 rounded-none px-0 py-0 font-mono text-[11px] uppercase tracking-wider text-red-400 underline"
-              >
-                Dismiss
               </SmolderButton>
             </div>
           )}
@@ -1606,14 +1634,14 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
           {/* Result */}
           {nb.result && !showDetailsForm && (
             <div className="space-y-4 pb-16">
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                 <p className="font-mono text-xs tracking-wide text-zinc-500">
                   Generated {new Date(nb.result.generatedAt).toLocaleString()} · grounded in{" "}
                   {hasSources
                     ? `${nb.sources.length} reference${nb.sources.length === 1 ? "" : "s"}`
                     : "pedagogy only"}
                 </p>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {unapprovedWithContent.length > 0 && (
                     <SmolderButton
                       variant="forge"
@@ -1640,7 +1668,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                 <div
                   className={`h-full transition-all duration-300 ${
                     activeApprovedCount === activeTotal && activeTotal > 0
-                      ? "bg-[var(--lf-accent)] shadow-[0_0_12px_rgba(0,255,156,0.7)]"
+                      ? "bg-[var(--lf-accent)] shadow-[0_0_12px_rgba(255,106,0,0.7)]"
                       : "bg-[var(--lf-accent)]/50"
                   }`}
                   style={{ width: `${activeTotal ? (activeApprovedCount / activeTotal) * 100 : 0}%` }}
@@ -1658,7 +1686,11 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                       <button
                         key={i}
                         type="button"
-                        onClick={() => setActiveSessionTab(i)}
+                        onClick={() => {
+                          setActiveSessionTab(i);
+                          setEditingSection(null);
+                          setFeedbackFor(null);
+                        }}
                         className={`flex items-center gap-1.5 px-4 py-2 font-mono text-[11px] uppercase tracking-wider transition-colors ${
                           activeSessionTab === i
                             ? "border-b-2 border-[var(--lf-accent)] text-[var(--lf-accent)]"
@@ -1666,7 +1698,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                         }`}
                       >
                         Session {sp.sessionNumber}
-                        <span className={`text-[10px] ${spDone ? "text-[var(--lf-accent)]" : "text-zinc-600"}`}>
+                        <span className={`text-[11px] ${spDone ? "text-[var(--lf-accent)]" : "text-zinc-600"}`}>
                           {spDone ? "✓" : `${spApproved}/${spTotal}`}
                         </span>
                       </button>
@@ -1693,12 +1725,12 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                     return (
                       <article
                         key={section.sectionId}
-                        className="lf-panel lf-frame relative border p-5 shadow-[0_0_30px_rgba(0,255,156,0.07)]"
+                        className="lf-panel lf-frame relative border p-5 shadow-[0_0_30px_rgba(255,106,0,0.07)]"
                         style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 60%)" }}
                       >
-                        <div className="mb-3 flex items-start justify-between gap-3">
-                          <h2 className="font-semibold text-emerald-50">{section.title}</h2>
-                          <span className="shrink-0 border px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 50%)", backgroundColor: "color-mix(in srgb, var(--lf-accent), transparent 90%)" }}>
+                        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                          <h2 className="font-semibold text-[var(--lf-fg)]">{section.title}</h2>
+                          <span className="shrink-0 border px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 50%)", backgroundColor: "color-mix(in srgb, var(--lf-accent), transparent 90%)" }}>
                             Teacher standard · locked
                           </span>
                         </div>
@@ -1715,17 +1747,17 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                       key={`${activeSessionTab}-${section.sectionId}`}
                       className={`rounded-none border p-5 shadow-sm transition-colors ${
                         isApproved
-                          ? "border-[var(--lf-accent)]/45 shadow-[0_0_24px_rgba(0,255,156,0.06)]"
+                          ? "border-[var(--lf-accent)]/45 shadow-[0_0_24px_rgba(255,106,0,0.06)]"
                           : "border-[var(--lf-accent)]/15"
                       }`}
                       style={{ backgroundColor: "color-mix(in srgb, var(--lf-bg), transparent 20%)" }}
                     >
-                      <div className="mb-3 flex items-start justify-between gap-3">
-                        <h2 className="font-semibold text-emerald-50">{section.title}</h2>
-                        <div className="flex shrink-0 items-center gap-2">
+                      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                        <h2 className="font-semibold text-[var(--lf-fg)]">{section.title}</h2>
+                        <div className="flex flex-wrap items-center gap-2">
                           {isApproved ? (
                             <>
-                              <span className="border px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 50%)", backgroundColor: "color-mix(in srgb, var(--lf-accent), transparent 90%)" }}>
+                              <span className="border px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 50%)", backgroundColor: "color-mix(in srgb, var(--lf-accent), transparent 90%)" }}>
                                 Approved ✓
                               </span>
                               <SmolderButton
@@ -1772,7 +1804,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                                 variant="ghost"
                                 onClick={() => regenerateSection(section.sectionId, false)}
                                 disabled={generating}
-                                className="rounded-none px-2 py-1 font-mono text-[11px] uppercase tracking-wider !text-emerald-300"
+                                className="rounded-none px-2 py-1 font-mono text-[11px] uppercase tracking-wider !text-[var(--lf-accent)]"
                               >
                                 {sectionBusy === section.sectionId ? (
                                   <Spinner className="mr-1 inline h-3 w-3" />
@@ -1872,7 +1904,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                             <span
                               key={ref}
                               title={refName(ref)}
-                              className="border px-1.5 py-0.5 font-mono text-[10px] uppercase text-emerald-300/70"
+                              className="border px-1.5 py-0.5 font-mono text-[11px] uppercase text-zinc-400"
                               style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 80%)", backgroundColor: "color-mix(in srgb, var(--lf-accent), transparent 95%)" }}
                             >
                               [{ref}] {refName(ref)}
@@ -1896,12 +1928,12 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                 </h2>
                 {nb.assessmentResult && (
                   <SmolderButton
-                    variant="forge"
-                    onClick={() => {/* TODO: Export assessment */}}
-                    disabled={assessmentBusy}
-                    className="shrink-0 rounded-none px-4 py-2 font-mono text-sm font-semibold uppercase tracking-wider"
+                    variant="muted"
+                    disabled
+                    title="Assessment download is not available yet."
+                    className="shrink-0 rounded-none px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider"
                   >
-                    GOTCHA
+                    Download forging soon
                   </SmolderButton>
                 )}
               </div>
@@ -1914,7 +1946,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                 {/* Learning Competency - independent */}
                 <div>
                   <label className="block">
-                    <span className="mb-0.5 block font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]">
+                    <span className="lf-label lf-label-key mb-1 block">
                       Learning Competency &amp; Curriculum Standards <span aria-hidden="true">*</span>
                     </span>
                     <textarea
@@ -1931,7 +1963,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                 {/* Content / Topic - independent */}
                 <div>
                   <label className="block">
-                    <span className="mb-0.5 block font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]">
+                    <span className="lf-label lf-label-key mb-1 block">
                       Content / Topic <span aria-hidden="true">*</span>
                     </span>
                     <textarea
@@ -1952,7 +1984,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                 {/* Number of Items */}
                 <div>
                   <label className="block">
-                    <span className="mb-0.5 block font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]">
+                    <span className="lf-label lf-label-key mb-1 block">
                       Number of Items
                     </span>
                     <input
@@ -1969,7 +2001,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
 
                 {/* Item Types */}
                 <div>
-                  <span className="mb-0.5 block font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]">
+                  <span className="lf-label lf-label-key mb-1 block">
                     Item Types
                   </span>
                   <div className="flex flex-wrap gap-2 mt-1">
@@ -1997,7 +2029,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                 {/* Difficulty Level */}
                 <div>
                   <label className="block">
-                    <span className="mb-0.5 block font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]">
+                    <span className="lf-label lf-label-key mb-1 block">
                       Difficulty Level
                     </span>
                     <select
@@ -2049,16 +2081,17 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
               {assessmentConfigSaved && (
               <SmolderButton
                 variant="forge"
+                ambient
                 onClick={generateAssessment}
                 disabled={!assessmentCompetency.trim() || !assessmentTopic.trim() || assessmentBusy}
-                className="w-full rounded-none px-6 py-4 font-mono text-base font-bold uppercase tracking-widest disabled:cursor-not-allowed disabled:shadow-none disabled:opacity-30"
+                className="w-full rounded-none px-6 py-4 font-mono text-base font-bold uppercase tracking-widest disabled:cursor-not-allowed disabled:shadow-none disabled:opacity-40"
               >
                 {assessmentBusy ? (
                   <span className="flex items-center justify-center gap-2">
-                    <Spinner className="h-4 w-4" /> Forging Assessment...
+                    <Spinner className="h-4 w-4" /> Forging assessment…
                   </span>
                 ) : (
-                  "STRIKE IT NOW!"
+                  "You strike, I'll forge it"
                 )}
               </SmolderButton>
               )}
@@ -2066,14 +2099,14 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
               {/* Assessment Result */}
               {nb.assessmentResult && nb.assessmentResult.sections.length > 0 && (
                 <div className="space-y-4 pb-16">
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                     <p className="font-mono text-xs tracking-wide text-zinc-500">
                       Generated {new Date(nb.assessmentResult.generatedAt).toLocaleString()}
                       {nb.assessmentResult.details?.assessmentType && (
                         <span className="ml-2 uppercase">({nb.assessmentResult.details.assessmentType})</span>
                       )}
                     </p>
-                    <div className="flex shrink-0 items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {nb.assessmentResult.sections.some((s) => !s.approvedAt) && (
                         <SmolderButton
                           variant="forge"
@@ -2081,7 +2114,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                           disabled={assessmentBusy || assessmentSectionBusy !== null}
                           className="rounded-none px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider"
                         >
-                          Approve All
+                          Approve all
                         </SmolderButton>
                       )}
                       <p className="font-mono text-xs uppercase tracking-wider text-zinc-400">
@@ -2100,17 +2133,17 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                         key={section.sectionId}
                         className={`rounded-none border p-5 shadow-sm transition-colors ${
                           isApproved
-                            ? "border-[var(--lf-accent)]/45 shadow-[0_0_24px_rgba(0,255,156,0.06)]"
+                            ? "border-[var(--lf-accent)]/45 shadow-[0_0_24px_rgba(255,106,0,0.06)]"
                             : "border-[var(--lf-accent)]/15"
                         }`}
                         style={{ backgroundColor: "color-mix(in srgb, var(--lf-bg), transparent 20%)" }}
                       >
-                        <div className="mb-3 flex items-start justify-between gap-3">
-                          <h2 className="font-semibold text-emerald-50">{section.title}</h2>
-                          <div className="flex shrink-0 items-center gap-2">
+                        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                          <h2 className="font-semibold text-[var(--lf-fg)]">{section.title}</h2>
+                          <div className="flex flex-wrap items-center gap-2">
                             {isApproved ? (
                               <>
-                                <span className="border px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 50%)", backgroundColor: "color-mix(in srgb, var(--lf-accent), transparent 90%)" }}>
+                                <span className="border px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--lf-accent)]" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 50%)", backgroundColor: "color-mix(in srgb, var(--lf-accent), transparent 90%)" }}>
                                   Approved ✓
                                 </span>
                                 <SmolderButton
@@ -2157,7 +2190,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                                   variant="ghost"
                                   onClick={() => regenerateAssessmentSection(section.sectionId, false)}
                                   disabled={assessmentBusy || assessmentSectionBusy !== null}
-                                  className="rounded-none px-2 py-1 font-mono text-[11px] uppercase tracking-wider !text-emerald-300"
+                                  className="rounded-none px-2 py-1 font-mono text-[11px] uppercase tracking-wider !text-[var(--lf-accent)]"
                                 >
                                   {assessmentSectionBusy === section.sectionId ? (
                                     <Spinner className="mr-1 inline h-3 w-3" />
@@ -2192,7 +2225,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                               <SmolderButton
                                 variant="muted"
                                 onClick={() => { setAssessmentEditingSection(null); setAssessmentEditText(""); }}
-                                className="rounded-none px-2 py-1 font-mono text-[11px] uppercase tracking-wider"
+                                className="rounded-none px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider"
                               >
                                 Cancel
                               </SmolderButton>
@@ -2203,7 +2236,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                                 className="rounded-none px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider"
                               >
                                 {assessmentSectionBusy === section.sectionId ? <Spinner className="mr-1 inline h-3 w-3" /> : null}
-                                Save
+                                Save edits
                               </SmolderButton>
                             </div>
                           </div>
@@ -2211,18 +2244,22 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
 
                         {assessmentFeedbackFor === section.sectionId && (
                           <div className="mb-3 rounded-none border p-3" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 75%)", backgroundColor: "color-mix(in srgb, var(--lf-accent), transparent 95%)" }}>
-                            <p className="mb-1.5 font-mono text-[10px] uppercase tracking-wider text-[var(--lf-accent)]">
-                              Revision instructions
-                            </p>
                             <textarea
                               value={assessmentFeedbackText}
                               onChange={(e) => setAssessmentFeedbackText(e.target.value)}
                               rows={2}
                               maxLength={2000}
-                              placeholder="What should the AI change or improve?"
+                              placeholder="What should change in this item?"
                               className="lf-input resize-none !text-sm"
                             />
-                            <div className="mt-2 flex justify-end">
+                            <div className="mt-2 flex justify-end gap-2">
+                              <SmolderButton
+                                variant="muted"
+                                onClick={() => setAssessmentFeedbackFor(null)}
+                                className="rounded-none px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider"
+                              >
+                                Cancel
+                              </SmolderButton>
                               <SmolderButton
                                 variant="forge"
                                 onClick={() => regenerateAssessmentSection(section.sectionId, true)}
@@ -2238,7 +2275,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                         {assessmentSectionBusy === section.sectionId && !isEditingThis ? (
                           <div className="flex items-center gap-2 py-4 font-mono text-sm uppercase tracking-wider text-zinc-400">
                             <Spinner className="h-4 w-4 text-[var(--lf-accent)]" />
-                            Rewriting this section...
+                            Rewriting this section…
                           </div>
                         ) : !isEditingThis ? (
                           <ContentBody content={section.content} />
@@ -2250,7 +2287,7 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                               <span
                                 key={ref}
                                 title={refName(ref)}
-                                className="border px-1.5 py-0.5 font-mono text-[10px] uppercase text-emerald-300/70"
+                                className="border px-1.5 py-0.5 font-mono text-[11px] uppercase text-zinc-400"
                                 style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 80%)", backgroundColor: "color-mix(in srgb, var(--lf-accent), transparent 95%)" }}
                               >
                                 [{ref}] {refName(ref)}
@@ -2269,8 +2306,9 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
 
         {/* Full-screen generation overlay */}
         {busy === "generate" && (
-          <ForgeOverlay multiSession={!!(details.sessions && parseInt(details.sessions) > 1)} />
+          <ForgeOverlay label="Forging your lesson plan…" multiSession={!!(details.sessions && parseInt(details.sessions) > 1)} />
         )}
+        {assessmentBusy && <ForgeOverlay label="Forging your assessment…" multiSession={false} />}
       </main>
     </div>
   );

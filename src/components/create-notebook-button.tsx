@@ -110,10 +110,6 @@ export default function CreateNotebookButton() {
             textShadow: "0 0 10px rgba(255,200,100,0.8)",
           }}
         >
-          <div className="pointer-events-none absolute inset-0 animate-pulse" style={{
-            background: "linear-gradient(180deg, rgba(255,200,100,0.15) 0%, transparent 50%, rgba(255,40,0,0.1) 100%)",
-            animationDuration: "1.5s",
-          }} />
 
           {creating ? (
             <span className="relative z-10 flex items-center justify-center gap-2">
@@ -149,59 +145,8 @@ export default function CreateNotebookButton() {
       </div>
 
       {error && (
-        <p className="font-mono text-xs uppercase tracking-wider text-red-400">{error}</p>
+        <p role="alert" className="text-sm text-red-400">{error}</p>
       )}
-
-      <style>{`
-        .strike-btn::after {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(90deg, transparent 0%, rgba(255,200,100,0.08) 50%, transparent 100%);
-          animation: smolder-shift 3s ease-in-out infinite;
-        }
-        @keyframes smolder-shift {
-          0%, 100% { transform: translateX(-100%); }
-          50% { transform: translateX(100%); }
-        }
-        @keyframes spark-fly {
-          0% {
-            opacity: 1;
-            transform: translate(0, 0) scale(1);
-          }
-          100% {
-            opacity: 0;
-            transform: translate(var(--tx), var(--ty)) scale(0.1);
-          }
-        }
-        .smoke-p {
-          position: absolute;
-          bottom: 0;
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: rgba(180, 180, 180, 0.25);
-          filter: blur(3px);
-          animation: smoke-rise 4s ease-out infinite;
-          opacity: 0;
-        }
-        @keyframes smoke-rise {
-          0% {
-            opacity: 0;
-            transform: translateY(0) translateX(0) scale(1);
-          }
-          10% {
-            opacity: 0.5;
-          }
-          50% {
-            opacity: 0.3;
-          }
-          100% {
-            opacity: 0;
-            transform: translateY(-60px) translateX(${15}px) scale(3);
-          }
-        }
-      `}</style>
     </div>
   );
 }

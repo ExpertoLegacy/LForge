@@ -63,19 +63,20 @@ export async function POST(request: NextRequest) {
       fullInstructions += `\n\nREVISION REQUEST:\nPrevious content to revise:\n"""\n${notebook.assessmentResult?.sections.find((s) => s.sectionId === body.sectionId)?.content || ""}\n"""\n\nTeacher feedback: ${body.feedback}`;
     }
 
-    // Generate only the target section by generating all and picking the one we need
+    const saved = notebook.assessmentResult?.details;
     const { sections } = await generateAssessment({
       sources,
-      sections: assessmentSections,
+      sections: [targetSection],
       instructions: fullInstructions || undefined,
       standards,
+      learnerContext: notebook.details?.learnerContext?.trim() || undefined,
       topic,
-      assessmentType: body.assessmentType,
-      numberOfItems: body.numberOfItems,
-      itemTypes: body.itemTypes,
-      difficultyLevel: body.difficultyLevel,
-      timeLimit: body.timeLimit,
-      totalPoints: body.totalPoints,
+      assessmentType: body.assessmentType ?? saved?.assessmentType,
+      numberOfItems: "1",
+      itemTypes: body.itemTypes ?? saved?.itemTypes,
+      difficultyLevel: body.difficultyLevel ?? saved?.difficultyLevel,
+      timeLimit: body.timeLimit ?? saved?.timeLimit,
+      totalPoints: body.totalPoints ?? saved?.totalPoints,
       modelId: body.modelId,
     });
 

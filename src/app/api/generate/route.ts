@@ -17,6 +17,7 @@ interface GenerateBody {
   instructions?: string;
   feedback?: string;
   modelId?: string;
+  sessionIndex?: number;
 }
 
 async function fetchWebSources(topic: string, standards: string): Promise<SourceDoc[]> {
@@ -81,7 +82,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const previous = notebook.result?.sections.find((s) => s.sectionId === body.sectionId) ?? null;
+      const sessionPlan =
+        typeof body.sessionIndex === "number" ? notebook.result?.sessionPlans?.[body.sessionIndex] : undefined;
+      const totalSessions = notebook.result?.sessionPlans?.length ?? 1;
+      const previous =
+        (sessionPlan?.sections ?? notebook.result?.sections)?.find((s) => s.sectionId === body.sectionId) ?? null;
 
       const section = await generateSingleSection({
         sources,
@@ -92,11 +97,15 @@ export async function POST(request: NextRequest) {
         previousContent: previous?.content,
         standards,
         learnerContext,
-        topic,
+        topic: sessionPlan && topic ? `${topic}\nThis section is for session ${sessionPlan.sessionNumber} of ${totalSessions}.` : topic,
         modelId: body.modelId,
       });
 
-      if (!notebook.result) {
+      if (sessionPlan) {
+        const idx = sessionPlan.sections.findIndex((s) => s.sectionId === section.sectionId);
+        if (idx >= 0) sessionPlan.sections[idx] = section;
+        else sessionPlan.sections.push(section);
+      } else if (!notebook.result) {
         notebook.result = { generatedAt: new Date().toISOString(), sections: [section] };
       } else {
         const idx = notebook.result.sections.findIndex((s) => s.sectionId === section.sectionId);
