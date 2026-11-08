@@ -1,3 +1,4 @@
+import { requireTicket } from "@/lib/tickets";
 import { NextRequest, NextResponse } from "next/server";
 import { getNotebook, saveNotebook } from "@/lib/store";
 import type { NotebookDetails } from "@/lib/types";
@@ -16,6 +17,9 @@ function clean(value: unknown, max: number): string | undefined {
 }
 
 export async function PUT(request: NextRequest, ctx: Ctx) {
+  const denied = await requireTicket();
+  if (denied) return denied;
+
   try {
     const { id } = await ctx.params;
     const notebook = await getNotebook(id);

@@ -1,3 +1,4 @@
+import { requireTicket } from "@/lib/tickets";
 import { NextRequest, NextResponse } from "next/server";
 import { generateAssessment } from "@/lib/ai-providers";
 import { officialAssessmentTemplateSections } from "@/lib/official-assessment-template";
@@ -24,6 +25,9 @@ interface RegenerateSectionBody {
 }
 
 export async function POST(request: NextRequest) {
+  const denied = await requireTicket();
+  if (denied) return denied;
+
   try {
     const body = (await request.json().catch(() => ({}))) as RegenerateSectionBody;
     if (!body.notebookId || !body.sectionId) {

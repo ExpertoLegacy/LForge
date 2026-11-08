@@ -1,9 +1,14 @@
 import CreateNotebookButton from "@/components/create-notebook-button";
+import TicketGate from "@/components/ticket-gate";
 import { getStats } from "@/lib/stats";
+import { hasTicketSession } from "@/lib/tickets";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  if (!(await hasTicketSession())) {
+    return <TicketGate />;
+  }
   const stats = await getStats();
   return (
     <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-16 flex flex-col items-center justify-center">

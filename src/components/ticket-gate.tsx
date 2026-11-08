@@ -1,71 +1,40 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import SmolderButton from "@/components/smolder-button";
 
-const VALID_TICKETS: Record<string, { daysValid?: number }> = {
-  "305872": { daysValid: 3 },
-  "031805": { daysValid: undefined },
-};
-
-const STORAGE_KEY = "lf-ticket";
-const STORAGE_TIME_KEY = "lf-ticket-time";
-
-function isTicketValid(ticket: string): boolean {
-  const config = VALID_TICKETS[ticket];
-  if (!config) return false;
-  if (config.daysValid === undefined) return true;
-  try {
-    const storedTime = localStorage.getItem(STORAGE_TIME_KEY);
-    const storedTicket = localStorage.getItem(STORAGE_KEY);
-    if (storedTicket === ticket && storedTime) {
-      const elapsed = Date.now() - parseInt(storedTime, 10);
-      const maxMs = config.daysValid * 24 * 60 * 60 * 1000;
-      return elapsed < maxMs;
-    }
-  } catch { /* ignore */ }
-  return true;
-}
-
-function saveTicket(ticket: string) {
-  try {
-    localStorage.setItem(STORAGE_KEY, ticket);
-    localStorage.setItem(STORAGE_TIME_KEY, String(Date.now()));
-  } catch { /* ignore */ }
-}
-
-export default function TicketGate({ children }: { children: React.ReactNode }) {
-  const [allowed, setAllowed] = useState<boolean | null>(null);
+export default function TicketGate() {
+  const router = useRouter();
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored && isTicketValid(stored)) {
-        setAllowed(true);
-        return;
-      }
-    } catch { /* ignore */ }
-    setAllowed(false);
-  }, []);
-
-  function handleEnter() {
+  async function handleEnter() {
     const code = input.trim();
     if (!code) {
       setError("Enter your entrance ticket.");
       return;
     }
-    if (isTicketValid(code)) {
-      saveTicket(code);
-      setAllowed(true);
-    } else {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticket: code }),
+      });
+      if (res.ok) {
+        router.refresh();
+        return;
+      }
       setError("Invalid or expired ticket.");
+    } catch {
+      setError("Could not check your ticket. Try again.");
+    } finally {
+      setBusy(false);
     }
   }
-
-  if (allowed === null) return null;
-  if (allowed) return <>{children}</>;
 
   return (
     <div className="flex min-h-screen items-center justify-center px-6" style={{ backgroundColor: "var(--lf-bg)" }}>
@@ -84,11 +53,12 @@ export default function TicketGate({ children }: { children: React.ReactNode }) 
             onChange={(e) => { setInput(e.target.value); setError(""); }}
             onKeyDown={(e) => e.key === "Enter" && handleEnter()}
             placeholder="Ticket number"
+            aria-label="Entrance ticket number"
             className="lf-input w-full px-4 py-3 text-center font-mono text-sm tracking-widest"
             autoFocus
           />
           {error && (
-            <p className="text-center font-mono text-xs uppercase tracking-wider text-red-400">{error}</p>
+            <p role="alert" className="text-center text-sm text-red-400">{error}</p>
           )}
           <SmolderButton
             variant="forge"
@@ -98,16 +68,6 @@ export default function TicketGate({ children }: { children: React.ReactNode }) 
             Enter
           </SmolderButton>
         </div>
-
-        <style>{`
-          .forge-title {
-            background: linear-gradient(180deg, #fff5eb 0%, #ffcc66 25%, #ff6a00 55%, #cc3300 80%, #991a00 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            filter: drop-shadow(0 0 8px rgba(255,106,0,0.6)) drop-shadow(0 0 20px rgba(255,60,0,0.3));
-          }
-        `}</style>
       </div>
     </div>
   );

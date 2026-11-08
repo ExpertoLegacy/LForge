@@ -1,3 +1,4 @@
+import { requireTicket } from "@/lib/tickets";
 import { NextRequest, NextResponse } from "next/server";
 import { generateAssessment } from "@/lib/ai-providers";
 import { officialAssessmentTemplateSections } from "@/lib/official-assessment-template";
@@ -23,6 +24,9 @@ interface GenerateAssessmentBody {
 }
 
 export async function POST(request: NextRequest) {
+  const denied = await requireTicket();
+  if (denied) return denied;
+
   try {
     const body = (await request.json().catch(() => ({}))) as GenerateAssessmentBody;
     if (!body.notebookId) {

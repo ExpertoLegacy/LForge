@@ -1,3 +1,4 @@
+import { requireTicket } from "@/lib/tickets";
 import { NextRequest, NextResponse } from "next/server";
 import { generateFullPlan, generateSingleSection, generateMultiSession, parseSessionCount } from "@/lib/ai-providers";
 import { getNotebook, saveNotebook } from "@/lib/store";
@@ -38,6 +39,9 @@ async function fetchWebSources(topic: string, standards: string): Promise<Source
 }
 
 export async function POST(request: NextRequest) {
+  const denied = await requireTicket();
+  if (denied) return denied;
+
   try {
     const body = (await request.json().catch(() => ({}))) as GenerateBody;
     if (!body.notebookId) {

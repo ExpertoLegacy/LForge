@@ -1,3 +1,4 @@
+import { requireTicket } from "@/lib/tickets";
 import { NextRequest, NextResponse } from "next/server";
 import { getNotebook, saveNotebook } from "@/lib/store";
 import { jsonError } from "@/lib/http";
@@ -10,6 +11,9 @@ const MAX_CONTENT_CHARS = 20_000;
 
 /** Edit the content of one section (only while it is not approved). */
 export async function PATCH(request: NextRequest, ctx: Ctx) {
+  const denied = await requireTicket();
+  if (denied) return denied;
+
   try {
     const { id, sectionId } = await ctx.params;
     const notebook = await getNotebook(id);
