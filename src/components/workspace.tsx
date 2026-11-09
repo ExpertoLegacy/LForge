@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import type { Notebook, NotebookDetails, SourceKind, AssessmentDetails, AssessmentType } from "@/lib/types";
 import { extractText, SOURCE_ACCEPT } from "@/lib/client-extract";
 import { AI_MODELS, DEFAULT_MODEL_ID, getProviderLabel, type AIModel } from "@/lib/ai-providers";
+import { SAMPLE_DETAILS } from "@/lib/sample-details";
 import SmolderButton from "@/components/smolder-button";
 
 const COMPETENCY_SECTION_ID = "sec-1";
@@ -338,14 +339,16 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
     const base = initialNotebook.details ?? {};
     const isEmpty = !base.teachers?.trim() && !base.learningArea?.trim() && !base.gradeSection?.trim() && !base.position?.trim() && !base.checkedBy?.trim() && !base.notedBy?.trim();
     if (!isEmpty) return base;
+    // Only a notebook whose details were never saved gets the demo values.
+    const defaults = Object.keys(base).length === 0 ? SAMPLE_DETAILS : {};
     try {
       const saved = localStorage.getItem("lf-saved-fields");
       if (saved) {
         const parsed = JSON.parse(saved);
-        return { ...base, ...parsed };
+        return { ...defaults, ...base, ...parsed };
       }
     } catch { /* ignore */ }
-    return base;
+    return { ...defaults, ...base };
   });
   const [detailsSaved, setDetailsSaved] = useState(false);
   const [detailsEditing, setDetailsEditing] = useState(false);
@@ -1438,6 +1441,11 @@ export default function Workspace({ initialNotebook }: { initialNotebook: Notebo
                 </div>
 
                 <div className="lf-panel space-y-2 p-3">
+                  {details.competency === SAMPLE_DETAILS.competency && (
+                    <p className="text-xs text-zinc-400">
+                      Sample data is loaded so you can try LessonForge. Replace it with your own lesson details.
+                    </p>
+                  )}
                   {!identitySaved && (
                     <>
                   <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
