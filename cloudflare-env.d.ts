@@ -5,4 +5,6 @@
 interface CloudflareEnv {
   NOTEBOOKS_KV: KVNamespace;
   STATS_KV: KVNamespace;
+  // Worker secret that signs entrance-ticket session cookies.
+  TICKET_SESSION_SECRET?: string;
 }

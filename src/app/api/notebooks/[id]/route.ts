@@ -1,3 +1,4 @@
+import { requireTicket } from "@/lib/tickets";
 import { NextRequest, NextResponse } from "next/server";
 import { deleteNotebook, getNotebook, saveNotebook } from "@/lib/store";
 import { jsonError } from "@/lib/http";
@@ -7,6 +8,9 @@ interface Ctx {
 }
 
 export async function GET(_request: NextRequest, ctx: Ctx) {
+  const denied = await requireTicket();
+  if (denied) return denied;
+
   try {
     const { id } = await ctx.params;
     const notebook = await getNotebook(id);
@@ -20,6 +24,9 @@ export async function GET(_request: NextRequest, ctx: Ctx) {
 }
 
 export async function PATCH(request: NextRequest, ctx: Ctx) {
+  const denied = await requireTicket();
+  if (denied) return denied;
+
   try {
     const { id } = await ctx.params;
     const notebook = await getNotebook(id);
@@ -38,6 +45,9 @@ export async function PATCH(request: NextRequest, ctx: Ctx) {
 }
 
 export async function DELETE(_request: NextRequest, ctx: Ctx) {
+  const denied = await requireTicket();
+  if (denied) return denied;
+
   try {
     const { id } = await ctx.params;
     const deleted = await deleteNotebook(id);

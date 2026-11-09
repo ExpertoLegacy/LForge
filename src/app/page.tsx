@@ -1,9 +1,14 @@
 import CreateNotebookButton from "@/components/create-notebook-button";
+import TicketGate from "@/components/ticket-gate";
 import { getStats } from "@/lib/stats";
+import { hasTicketSession } from "@/lib/tickets";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  if (!(await hasTicketSession())) {
+    return <TicketGate />;
+  }
   const stats = await getStats();
   return (
     <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-16 flex flex-col items-center justify-center">
@@ -14,7 +19,7 @@ export default async function HomePage() {
           </span>
           <div className="flex flex-col justify-center text-left">
             <div className="relative inline-block">
-              <h1 className="forge-title font-mono text-2xl font-bold uppercase leading-none tracking-[0.18em]">
+              <h1 className="forge-title forge-flicker font-mono text-2xl font-bold uppercase leading-none tracking-[0.18em]">
                 LessonForge
               </h1>
               <div className="forge-smoke">
@@ -38,7 +43,7 @@ export default async function HomePage() {
       </header>
 
       <section className="lf-panel lf-frame relative w-full p-8">
-        <p className="forge-title mx-auto text-center font-mono text-sm leading-relaxed">
+        <p className="mx-auto text-center font-mono text-sm leading-relaxed text-[var(--lf-fg)]">
           Pedagogical authority remains absolute: Review. Refine. Approve.
         </p>
         <div className="mt-6">
@@ -46,54 +51,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <div className="mt-6 flex items-center gap-3 border-t pt-4 font-mono text-[11px] uppercase tracking-wider" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 85%)" }}>
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-3 border-t pt-4 font-mono text-[11px] uppercase tracking-wider" style={{ borderColor: "color-mix(in srgb, var(--lf-accent), transparent 85%)" }}>
         <span className="text-zinc-500">Lesson Plan Minted</span>
-        <span className="forge-title text-sm font-bold">{stats.plans}</span>
+        <span className="text-sm font-bold text-[var(--lf-accent)]">{stats.plans}</span>
         <span className="text-zinc-700">|</span>
         <span className="text-zinc-500">Assessment Refined</span>
-        <span className="forge-title text-sm font-bold">{stats.assessments}</span>
+        <span className="text-sm font-bold text-[var(--lf-accent)]">{stats.assessments}</span>
       </div>
-
-      <style>{`
-        .forge-title {
-          background: linear-gradient(180deg, #fff5eb 0%, #ffcc66 25%, #ff6a00 55%, #cc3300 80%, #991a00 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          filter: drop-shadow(0 0 8px rgba(255,106,0,0.6)) drop-shadow(0 0 20px rgba(255,60,0,0.3));
-          animation: forge-flicker 3s ease-in-out infinite;
-        }
-        @keyframes forge-flicker {
-          0%, 100% { filter: drop-shadow(0 0 8px rgba(255,106,0,0.6)) drop-shadow(0 0 20px rgba(255,60,0,0.3)); }
-          50% { filter: drop-shadow(0 0 12px rgba(255,150,0,0.8)) drop-shadow(0 0 30px rgba(255,80,0,0.5)); }
-        }
-        .forge-smoke {
-          position: absolute;
-          top: -8px;
-          left: 0;
-          right: 0;
-          height: 20px;
-          overflow: visible;
-          pointer-events: none;
-        }
-        .forge-smoke .smoke-p {
-          position: absolute;
-          bottom: 0;
-          width: 4px;
-          height: 4px;
-          border-radius: 50%;
-          background: rgba(180, 180, 180, 0.3);
-          filter: blur(2px);
-          animation: smoke-rise 3s ease-out infinite;
-          opacity: 0;
-        }
-        @keyframes smoke-rise {
-          0% { opacity: 0; transform: translateY(0) translateX(0) scale(1); }
-          15% { opacity: 0.5; }
-          50% { opacity: 0.2; }
-          100% { opacity: 0; transform: translateY(-30px) translateX(8px) scale(2.5); }
-        }
-      `}</style>
     </div>
   );
 }

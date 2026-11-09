@@ -19,7 +19,7 @@ export default function ForgeBackground() {
 
   useEffect(() => {
     const el = canvasRef.current;
-    if (!el) return;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const cvs: HTMLCanvasElement = el;
     const maybeCtx = cvs.getContext("2d");
     if (!maybeCtx) return;

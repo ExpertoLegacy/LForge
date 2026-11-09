@@ -1,3 +1,4 @@
+import { requireTicket } from "@/lib/tickets";
 import { NextRequest, NextResponse } from "next/server";
 import { getNotebook, saveNotebook } from "@/lib/store";
 import { jsonError } from "@/lib/http";
@@ -12,6 +13,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; sectionId: string }> }
 ) {
+  const denied = await requireTicket();
+  if (denied) return denied;
+
   try {
     const { id, sectionId } = await params;
     const body = (await request.json().catch(() => ({}))) as SectionBody;

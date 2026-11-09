@@ -1,3 +1,4 @@
+import { requireTicket } from "@/lib/tickets";
 import { NextRequest, NextResponse } from "next/server";
 import { getNotebook, saveNotebook } from "@/lib/store";
 import { jsonError } from "@/lib/http";
@@ -7,6 +8,9 @@ interface Ctx {
 }
 
 export async function POST(request: NextRequest, ctx: Ctx) {
+  const denied = await requireTicket();
+  if (denied) return denied;
+
   try {
     const { id } = await ctx.params;
     const notebook = await getNotebook(id);

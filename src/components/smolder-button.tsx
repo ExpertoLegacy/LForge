@@ -16,12 +16,15 @@ interface SmolderButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
   variant?: "forge" | "ghost" | "danger" | "muted";
   sparkCount?: number;
+  /** Idle glow and smoke. Reserved for the main strike buttons. */
+  ambient?: boolean;
 }
 
 export default function SmolderButton({
   children,
   variant = "forge",
   sparkCount = 16,
+  ambient = false,
   className = "",
   disabled,
   onClick,
@@ -66,26 +69,28 @@ export default function SmolderButton({
   }
 
   const variantStyles: Record<string, string> = {
-    forge: `relative overflow-hidden text-white transition disabled:cursor-not-allowed disabled:opacity-40`,
-    ghost: `relative overflow-hidden text-zinc-300 hover:text-white transition disabled:cursor-not-allowed disabled:opacity-40`,
-    danger: `relative overflow-hidden text-white transition disabled:cursor-not-allowed disabled:opacity-40`,
-    muted: `relative overflow-hidden text-zinc-400 hover:text-zinc-200 transition disabled:cursor-not-allowed disabled:opacity-40`,
+    forge: `relative min-h-8 overflow-hidden text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40`,
+    ghost: `relative min-h-8 overflow-hidden text-zinc-300 hover:text-white hover:bg-white/5 transition disabled:cursor-not-allowed disabled:opacity-40`,
+    danger: `relative min-h-8 min-w-8 overflow-hidden text-red-300 hover:text-red-200 hover:bg-red-500/15 transition disabled:cursor-not-allowed disabled:opacity-40`,
+    muted: `relative min-h-8 overflow-hidden text-zinc-300 hover:text-white hover:bg-white/10 transition disabled:cursor-not-allowed disabled:opacity-40`,
   };
+
+  const fullWidth = /(^|\s)w-full(\s|$)/.test(className);
 
   const variantBg: Record<string, React.CSSProperties> = {
     forge: {
-      background: "linear-gradient(180deg, #ff6a00 0%, #cc3300 50%, #991a00 100%)",
-      boxShadow: "0 0 20px rgba(255,80,0,0.3), inset 0 1px 0 rgba(255,200,100,0.2)",
-      textShadow: "0 0 8px rgba(255,200,100,0.6)",
+      background: "linear-gradient(180deg, #d94f00 0%, #b83200 100%)",
+      boxShadow: ambient
+        ? "0 0 20px rgba(255,80,0,0.3), inset 0 1px 0 rgba(255,200,100,0.2)"
+        : "inset 0 1px 0 rgba(255,200,100,0.2)",
     },
     ghost: {
       background: "transparent",
       boxShadow: "none",
     },
     danger: {
-      background: "linear-gradient(180deg, #cc2200 0%, #991100 50%, #660a00 100%)",
-      boxShadow: "0 0 15px rgba(200,30,0,0.25), inset 0 1px 0 rgba(255,100,80,0.2)",
-      textShadow: "0 0 6px rgba(255,100,80,0.5)",
+      background: "transparent",
+      boxShadow: "none",
     },
     muted: {
       background: "rgba(255,255,255,0.05)",
@@ -94,16 +99,13 @@ export default function SmolderButton({
   };
 
   return (
-    <div className="relative flex w-full">
-      {/* Smolder glow - only for forge and danger */}
-      {(variant === "forge" || variant === "danger") && (
+    <div className={fullWidth ? "relative flex w-full" : "relative inline-flex shrink-0"}>
+      {ambient && (
         <>
           <div
             className="pointer-events-none absolute -inset-1 animate-pulse opacity-60"
             style={{
-              background: variant === "danger"
-                ? "radial-gradient(ellipse at center, rgba(200,30,0,0.3) 0%, transparent 70%)"
-                : "radial-gradient(ellipse at center, rgba(255,120,20,0.3) 0%, transparent 70%)",
+              background: "radial-gradient(ellipse at center, rgba(255,120,20,0.3) 0%, transparent 70%)",
               animationDuration: "2s",
             }}
           />
@@ -126,16 +128,6 @@ export default function SmolderButton({
         style={variantBg[variant]}
         {...rest}
       >
-        {/* Inner shimmer - forge only */}
-        {variant === "forge" && (
-          <div
-            className="pointer-events-none absolute inset-0 animate-pulse"
-            style={{
-              background: "linear-gradient(180deg, rgba(255,200,100,0.12) 0%, transparent 50%, rgba(255,40,0,0.08) 100%)",
-              animationDuration: "1.5s",
-            }}
-          />
-        )}
 
         <span className="relative z-10">{children}</span>
       </button>
@@ -158,30 +150,6 @@ export default function SmolderButton({
           } as React.CSSProperties}
         />
       ))}
-
-      <style>{`
-        .smoke-p {
-          position: absolute;
-          bottom: 0;
-          width: 5px;
-          height: 5px;
-          border-radius: 50%;
-          background: rgba(160, 160, 160, 0.2);
-          filter: blur(3px);
-          animation: smoke-rise 3.5s ease-out infinite;
-          opacity: 0;
-        }
-        @keyframes smoke-rise {
-          0% { opacity: 0; transform: translateY(0) translateX(0) scale(1); }
-          10% { opacity: 0.4; }
-          50% { opacity: 0.2; }
-          100% { opacity: 0; transform: translateY(-50px) translateX(10px) scale(2.5); }
-        }
-        @keyframes spark-fly {
-          0% { opacity: 1; transform: translate(0, 0) scale(1); }
-          100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.1); }
-        }
-      `}</style>
     </div>
   );
 }

@@ -19,11 +19,11 @@ export const AI_MODELS: AIModel[] = [
     note: "Recommended · Free via Groq",
   },
   {
-    id: "qwen/qwen3.6-27b",
-    name: "Qwen 3.6 27B",
+    id: "qwen/qwen3.8-27b",
+    name: "Qwen 3.8 27B",
     provider: "groq",
     free: true,
-    note: "Fast · Free via Groq",
+    note: "Fast · Preview · Free via Groq",
   },
   {
     id: "openai/gpt-oss-20b",
@@ -33,32 +33,18 @@ export const AI_MODELS: AIModel[] = [
     note: "Fastest · Free via Groq",
   },
   {
-    id: "groq/compound",
-    name: "Compound",
-    provider: "groq",
-    free: true,
-    note: "Groq native · Free",
-  },
-  {
-    id: "groq/compound-mini",
-    name: "Compound Mini",
-    provider: "groq",
-    free: true,
-    note: "Groq native · Fast · Free",
-  },
-  {
-    id: "gemini-2.5-flash",
-    name: "Gemini 2.5 Flash",
-    provider: "gemini",
-    free: true,
-    note: "Free tier · 20 req/day limit",
-  },
-  {
-    id: "gemini-2.5-pro",
-    name: "Gemini 2.5 Pro",
+    id: "gemini-3.8-flash",
+    name: "Gemini 3.8 Flash",
     provider: "gemini",
     free: true,
     note: "Free tier (rate limited)",
+  },
+  {
+    id: "gemini-3.5-flash-lite",
+    name: "Gemini 3.5 Flash-Lite",
+    provider: "gemini",
+    free: true,
+    note: "Fast · Free tier (rate limited)",
   },
   {
     id: "nvidia/nemotron-3-ultra-550b-a55b:free",
@@ -68,8 +54,8 @@ export const AI_MODELS: AIModel[] = [
     note: "Free via OpenRouter",
   },
   {
-    id: "nvidia/nemotron-3-super-120b-a12b:free",
-    name: "Nemotron 3 Super 120B",
+    id: "nvidia/nemotron-3.5-super-vl:free",
+    name: "Nemotron 3.5 Super VL",
     provider: "openrouter",
     free: true,
     note: "Free via OpenRouter",
@@ -257,6 +243,29 @@ Stay consistent with the other section titles listed above.${
   }`;
 }
 
+/**
+ * Not every model honours JSON mode: some add a reasoning block, a sentence
+ * of preamble or a code fence around the object.
+ */
+function parseModelJson(text: string): unknown {
+  const cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  const fenced = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1];
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  const candidates = [cleaned, fenced, start >= 0 && end > start ? cleaned.slice(start, end + 1) : undefined];
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      /* try the next candidate */
+    }
+  }
+  throw new Error("Could not read the model's response. Please try again or choose another model.");
+}
+
+const MODEL_TIMEOUT_MS = 180_000;
+
 /* ------------------------------------------------------------------ */
 /* OpenAI-compatible fetch (Groq / OpenRouter / Together)             */
 /* ------------------------------------------------------------------ */
@@ -268,23 +277,32 @@ async function callOpenAICompatible(
   prompt: string,
   extraHeaders?: Record<string, string>
 ): Promise<unknown> {
-  const res = await fetch(`${baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-      ...extraHeaders,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: SYSTEM_INSTRUCTION },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.6,
-      response_format: { type: "json_object" },
-    }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      signal: AbortSignal.timeout(MODEL_TIMEOUT_MS),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+        ...extraHeaders,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: SYSTEM_INSTRUCTION },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.6,
+        response_format: { type: "json_object" },
+      }),
+    });
+  } catch (err) {
+    if (err instanceof Error && err.name === "TimeoutError") {
+      throw new Error("The model took too long to respond. Please try again or choose another model.");
+    }
+    throw err;
+  }
 
   if (!res.ok) {
     let msg = `${res.status}`;
@@ -301,11 +319,7 @@ async function callOpenAICompatible(
   };
   const text = data.choices?.[0]?.message?.content;
   if (!text) throw new Error("The model returned an empty response. Please try again.");
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new Error("Could not parse model response. Please try again.");
-  }
+  return parseModelJson(text);
 }
 
 /* ------------------------------------------------------------------ */
@@ -355,11 +369,7 @@ async function callGemini(model: string, prompt: string): Promise<unknown> {
   });
   const text = response.text;
   if (!text) throw new Error("The model returned an empty response. Please try again.");
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new Error("Could not parse model response. Please try again.");
-  }
+  return parseModelJson(text);
 }
 
 /* ------------------------------------------------------------------ */
@@ -466,6 +476,7 @@ export async function generateFullPlan({
           instructions,
           standards,
           learnerContext,
+          topic,
           modelId,
         })
       );
@@ -846,6 +857,10 @@ export async function generateAssessment({
     if (existing && existing.content.length > 0) {
       result.push(existing);
     }
+  }
+
+  if (result.length === 0) {
+    throw new Error("The model returned no assessment items. Please try again or choose another model.");
   }
 
   return { sections: result };
