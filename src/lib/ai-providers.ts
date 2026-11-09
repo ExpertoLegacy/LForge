@@ -1,3 +1,4 @@
+import { withGeminiRecovery } from "./ai-retry";
 import type { PlanSection, SessionPlan, SourceDoc, TemplateSection } from "./types";
 
 export type ProviderId = "gemini" | "groq" | "openrouter" | "together";
@@ -381,7 +382,10 @@ async function callModel(modelId: string, prompt: string): Promise<unknown> {
 
   switch (model.provider) {
     case "gemini":
-      return callGemini(model.id, prompt);
+      return withGeminiRecovery(
+        () => callGemini(model.id, prompt),
+        () => callModel(DEFAULT_MODEL_ID, prompt)
+      );
 
     case "groq": {
       const apiKey = process.env.GROQ_API_KEY;
